@@ -1,0 +1,53 @@
+@model TodoApp.Models.TodoItem
+
+@{
+    ViewData["Title"] = "Edit Todo";
+}
+
+<!-- Header -->
+<div class="app-header">
+    <h1><i class="bi bi-check2-square"></i> TodoApp</h1>
+    <p class="subtitle">Edit your todo item</p>
+</div>
+
+<div class="edit-card">
+    <h3><i class="bi bi-pencil-square me-2"></i>Edit Todo</h3>
+
+    <form asp-action="Edit" asp-controller="Todo" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedAt" />
+        <input type="hidden" asp-for="IsCompleted" />
+        <input type="hidden" asp-for="CompletedAt" />
+
+        <div class="mb-3">
+            <label class="form-label-custom">Title *</label>
+            <input type="text"
+                   asp-for="Title"
+                   class="form-control-custom"
+                   placeholder="Todo title"
+                   maxlength="200"
+                   required />
+            <span asp-validation-for="Title" class="validation-error"></span>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label-custom">Description</label>
+            <textarea asp-for="Description"
+                      class="form-control-custom"
+                      placeholder="Optional description"
+                      rows="3"
+                      maxlength="500"></textarea>
+            <span asp-validation-for="Description" class="validation-error"></span>
+        </div>
+
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn-save">
+                <i class="bi bi-check-lg"></i> Save Changes
+            </button>
+            <a href="@Url.Action("Index", "Todo")" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>

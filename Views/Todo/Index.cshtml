@@ -1,0 +1,203 @@
+@model TodoApp.Models.TodoViewModel
+
+@{
+    ViewData["Title"] = "My Todos";
+}
+
+<!-- Toast Notifications -->
+@if (TempData["Success"] != null)
+{
+    <div class="toast-container">
+        <div class="toast-notification success">
+            <i class="bi bi-check-circle-fill" style="color: var(--success);"></i>
+            @TempData["Success"]
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="toast-container">
+        <div class="toast-notification error">
+            <i class="bi bi-exclamation-circle-fill" style="color: var(--danger);"></i>
+            @TempData["Error"]
+        </div>
+    </div>
+}
+
+<!-- Header -->
+<div class="app-header">
+    <h1><i class="bi bi-check2-square"></i> TodoApp</h1>
+    <p class="subtitle">Stay organized. Get things done.</p>
+</div>
+
+<!-- Main Card -->
+<div class="glass-card">
+
+    <!-- Add Todo Form -->
+    <div class="add-todo-section">
+        <form asp-action="Create" asp-controller="Todo" method="post" class="add-todo-form">
+            @Html.AntiForgeryToken()
+            <div class="input-group">
+                <input type="text"
+                       id="todoTitle"
+                       name="NewTodo.Title"
+                       placeholder="What needs to be done?"
+                       autocomplete="off"
+                       maxlength="200"
+                       class="form-control-custom" />
+                <div id="descriptionField" class="d-none">
+                    <textarea name="NewTodo.Description"
+                              placeholder="Add a description (optional)"
+                              rows="2"
+                              maxlength="500"
+                              class="form-control-custom"></textarea>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" id="toggleDescription" class="btn-icon" title="Add description"
+                        style="background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-secondary);">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+                <button type="submit" class="btn-add">
+                    <i class="bi bi-plus-lg"></i> Add
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-section">
+        <div class="filter-tabs">
+            <a href="@Url.Action("Index", "Todo", new { filter = "all" })"
+               class="filter-tab @(Model.CurrentFilter == "all" ? "active" : "")">
+                All <span class="d-none d-sm-inline">(</span><span class="d-none d-sm-inline">@Model.TotalCount</span><span class="d-none d-sm-inline">)</span>
+            </a>
+            <a href="@Url.Action("Index", "Todo", new { filter = "active" })"
+               class="filter-tab @(Model.CurrentFilter == "active" ? "active" : "")">
+                Active <span class="d-none d-sm-inline">(</span><span class="d-none d-sm-inline">@Model.ActiveCount</span><span class="d-none d-sm-inline">)</span>
+            </a>
+            <a href="@Url.Action("Index", "Todo", new { filter = "completed" })"
+               class="filter-tab @(Model.CurrentFilter == "completed" ? "active" : "")">
+                Completed <span class="d-none d-sm-inline">(</span><span class="d-none d-sm-inline">@Model.CompletedCount</span><span class="d-none d-sm-inline">)</span>
+            </a>
+        </div>
+        <span class="filter-count">@Model.ActiveCount item@(Model.ActiveCount != 1 ? "s" : "") left</span>
+    </div>
+
+    <!-- Todo List -->
+    @if (Model.Todos.Any())
+    {
+        <ul class="todo-list">
+            @foreach (var todo in Model.Todos)
+            {
+                <li class="todo-item @(todo.IsCompleted ? "completed" : "")">
+                    <!-- Checkbox -->
+                    <div class="todo-checkbox">
+                        <form asp-action="ToggleComplete" asp-controller="Todo" asp-route-id="@todo.Id"
+                              asp-route-returnFilter="@Model.CurrentFilter" method="post" class="toggle-form">
+                            @Html.AntiForgeryToken()
+                            <label class="checkmark">
+                                @if (todo.IsCompleted)
+                                {
+                                    <i class="bi bi-check-lg"></i>
+                                }
+                            </label>
+                        </form>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="todo-text">
+                        <h6>@todo.Title</h6>
+                        @if (!string.IsNullOrEmpty(todo.Description))
+                        {
+                            <p>@todo.Description</p>
+                        }
+                        <div class="todo-date">
+                            @if (todo.IsCompleted && todo.CompletedAt.HasValue)
+                            {
+                                <span>Completed @todo.CompletedAt.Value.ToString("MMM dd, yyyy")</span>
+                            }
+                            else
+                            {
+                                <span>Created @todo.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="todo-actions">
+                        <a href="@Url.Action("Edit", "Todo", new { id = todo.Id })" class="btn-icon edit" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form asp-action="Delete" asp-controller="Todo" asp-route-id="@todo.Id"
+                              asp-route-returnFilter="@Model.CurrentFilter" method="post" class="delete-form d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="btn-icon delete btn-delete-trigger" title="Delete" data-title="@todo.Title">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ul>
+
+        <!-- Footer -->
+        @if (Model.CompletedCount > 0)
+        {
+            <div class="list-footer">
+                <span class="items-left">@Model.ActiveCount active · @Model.CompletedCount completed</span>
+                <form asp-action="ClearCompleted" asp-controller="Todo" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-clear">
+                        <i class="bi bi-trash3"></i> Clear completed
+                    </button>
+                </form>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div class="empty-state">
+            @if (Model.CurrentFilter == "completed")
+            {
+                <div class="empty-icon">🎯</div>
+                <h5>No completed todos yet</h5>
+                <p>Start checking off your tasks!</p>
+            }
+            else if (Model.CurrentFilter == "active")
+            {
+                <div class="empty-icon">🎉</div>
+                <h5>All caught up!</h5>
+                <p>You've completed all your todos. Great job!</p>
+            }
+            else
+            {
+                <div class="empty-icon">📝</div>
+                <h5>No todos yet</h5>
+                <p>Add your first todo above to get started!</p>
+            }
+        </div>
+    }
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade modal-custom" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Delete Todo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete <strong id="deleteTodoTitle"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-delete-confirm" id="confirmDelete">
+                    <i class="bi bi-trash3"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
